@@ -74,6 +74,7 @@
   import LoginSelect from '/@/views/sys/login/LoginSelect.vue';
   import { useUserStore } from '/@/store/modules/user';
   import { useI18n } from '/@/hooks/web/useI18n';
+  import { useRoute } from 'vue-router';
   import Aide from "@/views/dashboard/ai/components/aide/index.vue"
   const { t } = useI18n();
 
@@ -106,7 +107,14 @@
       const userStore = useUserStore();
       const { getShowTopMenu, getShowHeaderTrigger, getSplit, getIsMixMode, getMenuWidth, getIsMixSidebar } = useMenuSetting();
       const { getUseErrorHandle, getShowSettingButton, getSettingButtonPosition, getAiIconShow } = useRootSetting();
-      const { title } = useGlobSetting();
+      const route = useRoute();
+      const { t } = useI18n();
+
+      // 获取当前页面的标题
+      const title = computed(() => {
+        const routeTitle = route.meta?.title;
+        return typeof routeTitle === 'function' ? routeTitle() : routeTitle || '';
+      });
 
       const {
         getHeaderTheme,

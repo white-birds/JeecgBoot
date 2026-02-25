@@ -280,7 +280,7 @@
 			<!--mongon db-->
 			<dependency>
 				<groupId>org.jeecgframework.boot3</groupId>
-				<artifactId>jeecg-boot-starter-mongon</artifactId>
+				<artifactId>jeecg-boot-starter-mongo</artifactId>
 				<version>${jeecgboot.version}</version>
 			</dependency>
 			<!--人大金仓驱动 版本号V008R006C005B0013 -->

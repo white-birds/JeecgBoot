@@ -15,6 +15,7 @@ import org.springdoc.core.filters.GlobalOpenApiMethodFilter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.method.HandlerMethod;
@@ -132,6 +133,7 @@ public class Swagger3Config implements WebMvcConfigurer {
     }
     
     @Bean
+    @Primary
     public OpenAPI customOpenAPI() {
         return new OpenAPI()
                 .info(new Info()

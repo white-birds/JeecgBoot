@@ -153,7 +153,7 @@ spring:
         master:
           url: jdbc:mysql://127.0.0.1:3306/jeecg-boot?characterEncoding=UTF-8&useUnicode=true&useSSL=false&tinyInt1isBit=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
           username: root
-          password: root
+          password: 1234
           driver-class-name: com.mysql.cj.jdbc.Driver
 #        # shardingjdbc数据源
 #        sharding-db:
@@ -168,7 +168,7 @@ spring:
       password:
 #mybatis plus 设置
 mybatis-plus:
-  mapper-locations: classpath*:org/jeecg/**/xml/*Mapper.xml
+  mapper-locations: classpath*:org/jeecg/**/xml/*Mapper.xml,classpath*:org/aihom/**/xml/*Mapper.xml
   global-config:
     # 关闭MP3.0自带的banner
     banner: false
@@ -184,13 +184,13 @@ mybatis-plus:
     call-setters-on-nulls: true
 #jeecg专用配置
 minidao:
-  base-package: org.jeecg.modules.jmreport.*,org.jeecg.modules.drag.*
+  base-package: org.jeecg.modules.jmreport.*,org.jeecg.modules.drag.*,org.aihom.modules.approval.*
 jeecg:
   # AI集成
   ai-chat:
     enabled: true
     model: deepseek-chat
-    apiKey: ??
+    apiKey: sk-0bce7c5517814c7cbcd7bc42fe6a0e79
     apiHost: https://api.deepseek.com/v1
     timeout: 60
   # AIRag向量库
@@ -200,7 +200,7 @@ jeecg:
       port: 5432
       database: postgres
       user: postgres
-      password: postgres
+      password: 1234
       table: embeddings
   #  Unipush配置 云函数调用 URL 化地址
   unicloud:
@@ -284,6 +284,10 @@ jeecg:
       api-key: ??
       # 应用秘钥
       secret-key: ??
+    # 自定义配置
+    custom:
+      # Logo图片路径（相对于项目根目录的static或resources/static目录）
+      logo: /static/jmreport/logo.png
   #xxl-job配置
   xxljob:
     enabled: false
@@ -316,6 +320,7 @@ logging:
     org.flywaydb: debug
     org.jeecg.modules.system.mapper: info
     org.jeecg.modules.demo.test.mapper: info
+    org.aihom.modules.approval.mapper: info
 #swagger
 knife4j:
   #开启增强配置

@@ -4,10 +4,7 @@
 -->
 <template>
   <div class="anticon" :class="getAppLogoClass" @click="goHome">
-    <img src="../../../assets/images/logo.png" />
-    <div class="ml-2 truncate md:opacity-100" :class="getTitleClass" v-show="showTitle">
-      {{ shortTitle }}
-    </div>
+    <img src="../../../assets/images/logo.png" class="logo-image" v-show="showTitle" />
   </div>
 </template>
 <script lang="ts" setup>
@@ -37,11 +34,14 @@
   const { prefixCls } = useDesign('app-logo');
   const { getCollapsedShowTitle } = useMenuSetting();
   const userStore = useUserStore();
-  const { title, shortTitle } = useGlobSetting();
-  
+
   const go = useGo();
 
-  const getAppLogoClass = computed(() => [prefixCls, props.theme, { 'collapsed-show-title': unref(getCollapsedShowTitle) }]);
+  const getAppLogoClass = computed(() => [
+    prefixCls,
+    props.theme,
+    { 'collapsed-show-title': unref(getCollapsedShowTitle) },
+  ]);
 
   const getTitleClass = computed(() => [
     `${prefixCls}__title`,
@@ -81,6 +81,13 @@
 
     &.dark &__title {
       color: @white;
+    }
+
+    .logo-image {
+      width: 100px;
+      height: 30px;
+      object-fit: contain;
+      transition: all 0.5s;
     }
 
     &__title {

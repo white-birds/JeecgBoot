@@ -187,6 +187,11 @@ jeecg:
     model: deepseek-chat
     apiKey: ??
     apiHost: https://api.deepseek.com
+# 积木BI配置
+jmreport:
+  custom:
+    # Logo图片路径（相对于项目根目录的static或resources/static目录）
+    logo: /static/jmreport/logo.png
     timeout: 60
   # AIRag向量库
   ai-rag:
