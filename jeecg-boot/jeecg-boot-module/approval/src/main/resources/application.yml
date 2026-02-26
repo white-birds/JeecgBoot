@@ -1,0 +1,10 @@
+spring:
+  application:
+    name: approval-boot
+  profiles:
+    active: dev
+
+
+
+
+
