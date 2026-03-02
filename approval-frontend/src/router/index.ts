@@ -4,9 +4,16 @@ import Layout from '@/layout/index.vue'
 
 const routes: RouteRecordRaw[] = [
   {
+    path: '/login',
+    name: 'Login',
+    component: () => import('@/views/Login.vue'),
+    meta: { title: '登录' },
+  },
+  {
     path: '/',
     component: Layout,
     redirect: '/dashboard',
+    meta: { requiresAuth: true },
     children: [
       {
         path: 'dashboard',
@@ -75,6 +82,37 @@ const routes: RouteRecordRaw[] = [
 const router = createRouter({
   history: createWebHistory(),
   routes,
+})
+
+// 路由守卫
+router.beforeEach((to, from, next) => {
+  const token = localStorage.getItem('token')
+  
+  // 如果访问登录页
+  if (to.path === '/login') {
+    // 已登录则跳转到首页
+    if (token) {
+      next('/dashboard')
+    } else {
+      next()
+    }
+    return
+  }
+  
+  // 如果需要认证
+  if (to.matched.some(record => record.meta.requiresAuth !== false)) {
+    if (!token) {
+      // 未登录则跳转到登录页
+      next({
+        path: '/login',
+        query: { redirect: to.fullPath }
+      })
+    } else {
+      next()
+    }
+  } else {
+    next()
+  }
 })
 
 export default router

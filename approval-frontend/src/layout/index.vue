@@ -77,10 +77,10 @@
               <a-avatar :size="32" style="background-color: #1890ff">
                 <template #icon><UserOutlined /></template>
               </a-avatar>
-              <span class="username">Admin</span>
+              <span class="username">{{ userInfo?.realname || 'Admin' }}</span>
             </div>
             <template #overlay>
-              <a-menu>
+              <a-menu @click="handleUserMenuClick">
                 <a-menu-item key="profile">
                   <UserOutlined />
                   个人中心
@@ -102,19 +102,17 @@
 
       <!-- 内容区 -->
       <a-layout-content class="layout-content">
-        <router-view v-slot="{ Component }">
-          <transition name="fade" mode="out-in">
-            <component :is="Component" />
-          </transition>
-        </router-view>
+        <router-view />
       </a-layout-content>
     </a-layout>
   </a-layout>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { Modal, message } from 'ant-design-vue'
+import { http } from '@/utils/http'
 import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
@@ -141,9 +139,52 @@ const route = useRoute()
 const collapsed = ref(false)
 const selectedKeys = ref([route.path])
 const logoError = ref(false)
+const userInfo = ref<any>(null)
 
 const handleLogoError = () => {
   logoError.value = true
+}
+
+// 加载用户信息
+onMounted(() => {
+  const storedUserInfo = localStorage.getItem('userInfo')
+  if (storedUserInfo) {
+    try {
+      userInfo.value = JSON.parse(storedUserInfo)
+    } catch (e) {
+      console.error('解析用户信息失败:', e)
+    }
+  }
+})
+
+// 处理用户菜单点击
+const handleUserMenuClick = ({ key }: { key: string }) => {
+  if (key === 'logout') {
+    Modal.confirm({
+      title: '确认退出',
+      content: '确定要退出登录吗？',
+      okText: '确定',
+      cancelText: '取消',
+      onOk: async () => {
+        try {
+          // 调用后端退出接口
+          await http.post('/sys/logout')
+        } catch (error) {
+          console.error('退出登录失败:', error)
+        } finally {
+          // 无论后端是否成功，都清除本地数据
+          localStorage.removeItem('token')
+          localStorage.removeItem('userInfo')
+          message.success('已退出登录')
+          router.push('/login')
+        }
+      }
+    })
+  } else if (key === 'profile') {
+    message.info('个人中心功能开发中')
+  } else if (key === 'settings') {
+    message.info('系统设置功能开发中')
+  }
 }
 
 // 图标映射
