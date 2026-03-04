@@ -6,15 +6,16 @@ import Antd from 'ant-design-vue'
 import 'ant-design-vue/dist/reset.css'
 import './styles/index.scss'
 
-const app = createApp(App)
+// 导入 Keycloak 初始化工具
+import { initKeycloak } from './utils/auth'
 
-app.use(createPinia())
-app.use(router)
-app.use(Antd)
+// 核心：等 Keycloak 认证完了再挂载 Vue
+initKeycloak(() => {
+    const app = createApp(App)
 
-app.mount('#app')
+    app.use(createPinia())
+    app.use(router)
+    app.use(Antd)
 
-
-
-
-
+    app.mount('#app')
+})

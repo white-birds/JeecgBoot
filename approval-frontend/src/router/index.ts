@@ -3,17 +3,11 @@ import type { RouteRecordRaw } from 'vue-router'
 import Layout from '@/layout/index.vue'
 
 const routes: RouteRecordRaw[] = [
-  {
-    path: '/login',
-    name: 'Login',
-    component: () => import('@/views/Login.vue'),
-    meta: { title: '登录' },
-  },
+  // 注意：此处已彻底删除 /login 路由，因为登录已由 Keycloak 托管
   {
     path: '/',
     component: Layout,
     redirect: '/dashboard',
-    meta: { requiresAuth: true },
     children: [
       {
         path: 'dashboard',
@@ -84,36 +78,24 @@ const router = createRouter({
   routes,
 })
 
-// 路由守卫
+/**
+ * 路由守卫
+ * 由于已经在 main.ts 中通过 initKeycloak 拦截了未登录用户，
+ * 这里的逻辑主要是为了防止用户手动清理 localStorage 后的异常处理。
+ */
 router.beforeEach((to, from, next) => {
   const token = localStorage.getItem('token')
-  
-  // 如果访问登录页
-  if (to.path === '/login') {
-    // 已登录则跳转到首页
-    if (token) {
-      next('/dashboard')
-    } else {
-      next()
-    }
-    return
-  }
-  
-  // 如果需要认证
-  if (to.matched.some(record => record.meta.requiresAuth !== false)) {
-    if (!token) {
-      // 未登录则跳转到登录页
-      next({
-        path: '/login',
-        query: { redirect: to.fullPath }
-      })
-    } else {
-      next()
-    }
+
+  // 检查是否需要认证 (除了主 Layout 下的路由，其他默认都需要)
+  const requiresAuth = to.matched.some(record => record.meta.requiresAuth !== false)
+
+  if (requiresAuth && !token) {
+    // ⚠️ 重点：如果 Token 丢失，直接刷新页面。
+    // 页面刷新会触发 main.ts 重新执行 initKeycloak，从而自动跳转到 Keycloak 登录页。
+    window.location.href = '/'
   } else {
     next()
   }
 })
 
 export default router
-
