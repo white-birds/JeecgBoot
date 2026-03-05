@@ -9,13 +9,13 @@
 
         <a-space>
           <a-segmented v-model:value="viewMode" :options="viewModeOptions" @change="handleViewModeChange" />
-          
+
           <a-select
-            v-if="viewMode === 'dashboard'"
-            v-model:value="selectedDashboard"
-            style="width: 320px"
-            placeholder="选择仪表板"
-            @change="handleDashboardChange"
+              v-if="viewMode === 'dashboard'"
+              v-model:value="selectedDashboard"
+              style="width: 320px"
+              placeholder="选择仪表板"
+              @change="handleDashboardChange"
           >
             <a-select-option v-for="d in dashboards" :key="d.embeddedUuid" :value="d.embeddedUuid">
               {{ d.name }}
@@ -29,7 +29,7 @@
             </template>
             {{ isFullscreen ? '退出全屏' : '全屏显示' }}
           </a-button>
-          
+
           <a-button @click="reloadSuperset">
             <template #icon><ReloadOutlined /></template>
             刷新
@@ -40,14 +40,14 @@
       <div class="superset-content">
         <!-- 完整系统模式：直接用 iframe -->
         <iframe
-          v-if="viewMode === 'full'"
-          ref="fullIframe"
-          :src="supersetFullUrl"
-          class="superset-iframe"
-          frameborder="0"
-          @load="handleIframeLoad"
+            v-if="viewMode === 'full'"
+            ref="fullIframe"
+            :src="supersetFullUrl"
+            class="superset-iframe"
+            frameborder="0"
+            @load="handleIframeLoad"
         />
-        
+
         <!-- Dashboard 模式：使用 embedded SDK -->
         <div v-else>
           <div ref="mountPoint" class="superset-mount" />
@@ -62,11 +62,11 @@
 import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
-import { 
-  LineChartOutlined, 
-  ReloadOutlined, 
-  ExpandOutlined, 
-  CompressOutlined 
+import {
+  LineChartOutlined,
+  ReloadOutlined,
+  ExpandOutlined,
+  CompressOutlined
 } from '@ant-design/icons-vue'
 import { embedDashboard } from '@superset-ui/embedded-sdk'
 import { http } from '@/utils/http'
@@ -88,14 +88,22 @@ const route = useRoute()
 const router = useRouter()
 
 // 视图模式选项
-const viewModeOptions = [
+const viewModeOptions =[
   { label: '完整系统', value: 'full' },
   { label: '仪表板', value: 'dashboard' },
 ]
 
-// 完整系统的 URL
-// const supersetFullUrl = ref('http://localhost:8088/superset/welcome/')
-const supersetFullUrl = ref('http://localhost:8088/login/keycloak?next=/superset/welcome/')
+// ==========================================
+// SSO Token 免密登录 URL 生成逻辑
+// ==========================================
+const supersetFullUrl = ref('')
+const initIframeUrl = () => {
+  // 从 Login.vue 存的本地缓存里拿出 JWT Token
+  const systemToken = localStorage.getItem('systemToken') || '';
+  // 拼接到 Superset 的拦截接口上
+  supersetFullUrl.value = `${supersetBaseUrl.value}/sso/?token=${systemToken}&next=/superset/welcome/`;
+}
+
 // --- 核心功能：原生全屏切换 ---
 const toggleFullScreen = () => {
   const el = pageRef.value as any
@@ -124,7 +132,7 @@ const toggleFullScreen = () => {
 const checkFullscreenState = () => {
   const doc = document as any
   const isFull = !!(doc.fullscreenElement || doc.webkitFullscreenElement || doc.msFullscreenElement)
-  
+
   isFullscreen.value = isFull
 
   if (isFull) {
@@ -147,7 +155,7 @@ const normalizeSupersetDomain = (url: string) => {
 }
 
 const loadSuperset = async () => {
-  if (!selectedDashboard.value) return 
+  if (!selectedDashboard.value) return
   loading.value = true
   mountedOk.value = false
 
@@ -170,13 +178,12 @@ const loadSuperset = async () => {
         return token as any
       },
       dashboardUiConfig: {
-        hideTitle: false,
+        hideTitle: true,
         hideTab: false,
         hideChartControls: false,
         filters: { visible: true, expanded: false },
       },
-      iframeSandboxExtras: ['allow-forms', 'allow-popups', 'allow-same-origin', 'allow-scripts'],
-      // 添加语言配置
+      iframeSandboxExtras:['allow-forms', 'allow-popups', 'allow-same-origin', 'allow-scripts'],
       locale: 'zh',
     })
     mountedOk.value = true
@@ -228,11 +235,13 @@ onMounted(async () => {
     const config = await http.get('/superset/config')
     if (config && (config as any).supersetUrl) {
       supersetBaseUrl.value = (config as any).supersetUrl
-      supersetFullUrl.value = `${supersetBaseUrl.value}/superset/welcome/`
     }
 
+    // 初始化 iframe 的带 Token 的 SSO 地址
+    initIframeUrl()
+
     const res = await http.get('/superset/dashboards')
-    let list = []
+    let list =[]
     if (Array.isArray(res)) list = res
     else if (res && res.result && Array.isArray(res.result)) list = res.result
 
@@ -241,7 +250,7 @@ onMounted(async () => {
       const uuidFromQuery = route.query.uuid as string | undefined
       const exist = dashboards.value.some(d => d.embeddedUuid === uuidFromQuery)
       selectedDashboard.value = (uuidFromQuery && exist) ? uuidFromQuery : dashboards.value[0].embeddedUuid
-      
+
       // 默认加载第一个 Dashboard
       loadSuperset()
     } else {
@@ -263,7 +272,7 @@ onUnmounted(() => {
 
 <style scoped>
 .superset-page {
-  height: calc(100vh - 120px); 
+  height: calc(100vh - 120px);
   background: #fff;
   display: flex;
   flex-direction: column;

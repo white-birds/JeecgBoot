@@ -1,17 +1,138 @@
-## ide
+# ===========================
+# IDE
+# ===========================
 **/.idea
+**/.vscode
 *.iml
+*.ipr
+*.iws
+.idea
+.vscode
 rebel.xml
 
-## backend
-**/target
-**/logs
+# ===========================
+# OS
+# ===========================
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
 
-## front
-**/*.lock
-os_del.cmd
-os_del_doc.cmd
-.svn
+# ===========================
+# Backend - Java
+# ===========================
+**/target/
+**/logs/
+**/*.log
+*.class
+*.jar
+*.war
+*.ear
+*.zip
+*.tar.gz
+*.rar
 derby.log
-.cursor
-.history
+
+# Maven
+.mvn/
+mvnw
+mvnw.cmd
+
+# Gradle
+.gradle/
+build/
+
+# ===========================
+# Frontend - Node.js
+# ===========================
+**/node_modules/
+**/dist/
+**/dist-ssr/
+**/.nuxt/
+**/.output/
+
+# ===========================
+# Environment Files
+# ===========================
+.env
+.env.local
+.env.*.local
+.env.production
+.env.docker
+.env.dockercloud
+.env.development
+
+# ===========================
+# Logs
+# ===========================
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ===========================
+# Test & Coverage
+# ===========================
+coverage/
+.nyc_output/
+*.lcov
+
+# ===========================
+# Temporary Files
+# ===========================
+*.swp
+*.swo
+*~
+.cache
+.temp
+.tmp
+
+# ===========================
+# Misc
+# ===========================
+*.bak
+*.backup
+*.orig
+*.rej
+.cursor/
+.history/
+.svn/
+CVS/
+
+# ===========================
+# Database
+# ===========================
+*.db
+*.sqlite
+*.mdb
+
+# ===========================
+# Docker & DevOps (环境配置，不上传)
+# ===========================
+docker/
+docker-compose*.yml
+docker-compose*.yaml
+start-docker*.bat
+start-docker*.sh
+*.rar
+*.zip
+
+# ===========================
+# Python (环境脚本，不上传)
+# ===========================
+check_jeecgenv.py
+*.pyc
+__pycache__/
+
+# ===========================
+# Docs (可选，如果需要可保留)
+# ===========================
+# README.md
+# README.en-US.md
+# README-AI.md
+# LICENSE
+# DEPLOY.md
+# STARTUP.md
+# PWA-README.md
+# etc/

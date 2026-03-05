@@ -77,7 +77,7 @@ public class SupersetServiceImpl implements ISupersetService {
         String accessToken = loginAndGetAccessToken();
         String csrfToken = getCsrfToken(accessToken);
         String url = supersetUrl + "/api/v1/security/guest_token/";
-        
+
         log.info("Superset URL: {}", url);
 
         Map<String, Object> requestBody = new HashMap<>();
@@ -85,13 +85,17 @@ public class SupersetServiceImpl implements ISupersetService {
                 Map.of("type", "dashboard", "id", embeddedDashboardUuid)
         ));
         requestBody.put("rls", List.of());
+
+        // ✅ 关键改动 1：显式指定角色为 Public
+        // 这会强制让 Embedded 模式使用 Public 权限，而不是你主系统的 Admin 权限
+        requestBody.put("roles", List.of("Public"));
+
         requestBody.put("user", Map.of(
-                "username", "guest",
+                "username", "guest_user", // 建议改成 guest_user 区分一下
                 "first_name", "Guest",
                 "last_name", "User",
-                "locale", "zh"  // 设置语言为中文
+                "locale", "zh"
         ));
-
         String jsonBody = JSON.toJSONString(requestBody);
         log.info("请求体: {}", jsonBody);
 
@@ -180,6 +184,7 @@ public class SupersetServiceImpl implements ISupersetService {
                 Map.of("type", "dashboard", "id", dashboardId)
         ));
         requestBody.put("rls", List.of());
+        requestBody.put("roles", List.of("Public"));
         requestBody.put("user", Map.of(
                 "username", "guest",
                 "first_name", "Guest",

@@ -2,8 +2,18 @@ import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
 import Layout from '@/layout/index.vue'
 
+// 假设你刚才写的登录页放在 views/Login.vue
+// 如果路径不对，请修改这里
+import Login from '@/views/Login.vue'
+
 const routes: RouteRecordRaw[] = [
-  // 注意：此处已彻底删除 /login 路由，因为登录已由 Keycloak 托管
+  // ✅ 新增：恢复登录页路由
+  {
+    path: '/login',
+    name: 'Login',
+    component: Login,
+    meta: { title: '登录', requiresAuth: false }
+  },
   {
     path: '/',
     component: Layout,
@@ -15,6 +25,7 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/dashboard/index.vue'),
         meta: { title: '工作台', icon: 'DashboardOutlined' },
       },
+      // ... 你的其他业务路由保持不变 ...
       {
         path: 'initiate',
         name: 'InitiateApproval',
@@ -63,10 +74,11 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/settings/index.vue'),
         meta: { title: '系统设置', icon: 'SettingOutlined' },
       },
+      // ✅ Superset 路由
       {
         path: 'bi-superset',
         name: 'BISuperset',
-        component: () => import('@/views/bi/superset.vue'),
+        component: () => import('@/views/bi/superset.vue'), // 确保这里指向你刚才改的 index.vue
         meta: { title: '数据分析', icon: 'LineChartOutlined' },
       },
     ],
@@ -78,24 +90,29 @@ const router = createRouter({
   routes,
 })
 
-/**
- * 路由守卫
- * 由于已经在 main.ts 中通过 initKeycloak 拦截了未登录用户，
- * 这里的逻辑主要是为了防止用户手动清理 localStorage 后的异常处理。
- */
+// ✅ 重写：基于 systemToken 的原生路由守卫
 router.beforeEach((to, from, next) => {
-  const token = localStorage.getItem('token')
+  // 1. 获取我们自己存的 token (注意 key 要和 Login.vue 里一致)
+  const token = localStorage.getItem('systemToken')
 
-  // 检查是否需要认证 (除了主 Layout 下的路由，其他默认都需要)
-  const requiresAuth = to.matched.some(record => record.meta.requiresAuth !== false)
-
-  if (requiresAuth && !token) {
-    // ⚠️ 重点：如果 Token 丢失，直接刷新页面。
-    // 页面刷新会触发 main.ts 重新执行 initKeycloak，从而自动跳转到 Keycloak 登录页。
-    window.location.href = '/'
-  } else {
-    next()
+  // 2. 如果去的是登录页
+  if (to.path === '/login') {
+    if (token) {
+      // 已经登录了，就踢回首页
+      return next('/')
+    }
+    // 没登录，允许访问登录页
+    return next()
   }
+
+  // 3. 如果去的是其他页面（需要认证）
+  if (!token) {
+    // 没 Token，强制跳转到我们自己的登录页
+    return next('/login')
+  }
+
+  // 4. 有 Token，放行
+  next()
 })
 
 export default router

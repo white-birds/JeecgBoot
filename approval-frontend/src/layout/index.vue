@@ -167,15 +167,16 @@ const handleUserMenuClick = ({ key }: { key: string }) => {
       cancelText: '取消',
       onOk: async () => {
         try {
-          // 调用后端退出接口
+          // 1. 调用后端接口清理后端 session
           await http.post('/sys/logout')
         } catch (error) {
           console.error('退出登录失败:', error)
         } finally {
-          // 无论后端是否成功，都清除本地数据
-          localStorage.removeItem('token')
+          // 2.【修改点】清理我们自己的 Token 和 用户信息
+          localStorage.removeItem('systemToken')
           localStorage.removeItem('userInfo')
-          message.success('已退出登录')
+
+          // 3.【修改点】直接跳转回登录页，不要再调 keycloak 了
           router.push('/login')
         }
       }
