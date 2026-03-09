@@ -35,9 +35,8 @@ public class SupersetServiceImpl implements ISupersetService {
     @Override
     @DS("superset") // 关键：指定这个方法走 SQLite 库
     public List<SupersetDashboardVO> getDashboardList() {
-        log.info("开始查询 Superset 仪表板列表...");
+        log.debug("开始查询 Superset 仪表板列表...");
         List<Map<String, Object>> rawData = metadataMapper.selectEmbeddedDashboards();
-        log.info("从数据库查询到 {} 条记录", rawData.size());
         
         List<SupersetDashboardVO> result = new ArrayList<>();
 
@@ -45,16 +44,15 @@ public class SupersetServiceImpl implements ISupersetService {
             String name = (String) map.get("name");
             String rawUuid = (String) map.get("rawUuid");
             
-            log.info("原始数据 - name: {}, rawUuid: {}", name, rawUuid);
+            log.debug("原始数据 - name: {}, rawUuid: {}", name, rawUuid);
 
             // 将 32 位十六进制字符串转换为 8-4-4-4-12 格式
             String formattedUuid = formatUuid(rawUuid);
-            log.info("格式化后的 UUID: {}", formattedUuid);
             
             result.add(new SupersetDashboardVO(name, formattedUuid));
         }
         
-        log.info("最终返回 {} 个仪表板", result.size());
+        log.info("查询到 {} 个仪表板", result.size());
         return result;
     }
 
@@ -67,8 +65,7 @@ public class SupersetServiceImpl implements ISupersetService {
     }
     @Override
     public String getGuestTokenForEmbeddedDashboard(String embeddedDashboardUuid) {
-        log.info("========== 开始获取 Embedded Dashboard Guest Token ==========");
-        log.info("请求的 embeddedDashboardUuid: {}", embeddedDashboardUuid);
+        log.debug("获取 Embedded Dashboard Guest Token: {}", embeddedDashboardUuid);
         
         if (embeddedDashboardUuid == null || embeddedDashboardUuid.trim().isEmpty()) {
             throw new IllegalArgumentException("embeddedDashboardUuid 不能为空");
@@ -77,8 +74,6 @@ public class SupersetServiceImpl implements ISupersetService {
         String accessToken = loginAndGetAccessToken();
         String csrfToken = getCsrfToken(accessToken);
         String url = supersetUrl + "/api/v1/security/guest_token/";
-
-        log.info("Superset URL: {}", url);
 
         Map<String, Object> requestBody = new HashMap<>();
         requestBody.put("resources", List.of(
@@ -97,7 +92,7 @@ public class SupersetServiceImpl implements ISupersetService {
                 "locale", "zh"
         ));
         String jsonBody = JSON.toJSONString(requestBody);
-        log.info("请求体: {}", jsonBody);
+        log.debug("请求体: {}", jsonBody);
 
         RequestBody body = RequestBody.create(jsonBody, JSON_MEDIA_TYPE);
 
@@ -113,26 +108,22 @@ public class SupersetServiceImpl implements ISupersetService {
             int statusCode = response.code();
             String responseBody = response.body() != null ? response.body().string() : "无响应体";
             
-            log.info("Superset 响应状态码: {}", statusCode);
-            log.info("Superset 响应内容: {}", responseBody);
-            
             if (!response.isSuccessful()) {
-                log.error("Superset guest_token(embedded) 请求失败，状态码: {}, 响应: {}", statusCode, responseBody);
+                log.error("获取 guest_token 失败，状态码: {}, 响应: {}", statusCode, responseBody);
                 throw new RuntimeException("Superset API 调用失败: " + statusCode + ", body=" + responseBody);
             }
 
             JSONObject jsonResponse = JSON.parseObject(responseBody);
             String token = jsonResponse.getString("token");
             if (token == null || token.trim().isEmpty()) {
-                log.error("Superset guest_token(embedded) 响应缺少 token 字段，响应: {}", responseBody);
+                log.error("响应缺少 token 字段，响应: {}", responseBody);
                 throw new RuntimeException("获取 token 失败：响应中没有 token");
             }
             
-            log.info("成功获取 guest token: {}", token.substring(0, Math.min(20, token.length())) + "...");
-            log.info("========== Guest Token 获取完成 ==========");
+            log.info("成功获取 guest token");
             return token;
         } catch (IOException e) {
-            log.error("Superset guest_token(embedded) 网络请求失败: {}", e.getMessage(), e);
+            log.error("网络请求失败: {}", e.getMessage(), e);
             throw new RuntimeException("获取系统访问令牌失败: " + e.getMessage());
         }
     }
