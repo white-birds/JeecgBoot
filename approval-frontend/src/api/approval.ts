@@ -68,3 +68,18 @@ export const deleteBatchApproval = (ids: string) => {
 
 // 删除了 getStatistics，直接用 getApprovalList 查询全部数据，前端自己统计
 
+// 用户注册接口
+export interface RegisterForm {
+  username: string
+  password: string
+  confirmPassword?: string
+  realname?: string
+  email?: string
+  phone?: string
+}
+
+// 用户注册
+export const registerUser = (data: RegisterForm) => {
+  return http.post('/sys/register', data)
+}
+

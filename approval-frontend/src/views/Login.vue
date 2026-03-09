@@ -5,12 +5,7 @@
       <div class="aihom-left-inner">
         <div class="aihom-brand">
           <div class="aihom-logo-large">
-            <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect width="64" height="64" rx="16" fill="white" fill-opacity="0.15"/>
-              <path d="M12 48L24 20L32 36L40 24L52 48H12Z" fill="white" fill-opacity="0.9" stroke="white"
-                    stroke-width="1.5" stroke-linejoin="round"/>
-              <circle cx="44" cy="20" r="5" fill="white" fill-opacity="0.7"/>
-            </svg>
+            <img src="/logo.png" alt="AIHOM Logo" style="width: 120px; height: auto;" />
           </div>
           <h1 class="aihom-brand-name">AIHOM</h1>
           <p class="aihom-brand-sub">智能数据分析平台</p>
@@ -37,12 +32,7 @@
       <div class="aihom-form-container">
         <!-- Logo区域 -->
         <div class="aihom-form-logo">
-          <svg width="40" height="40" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect width="64" height="64" rx="14" fill="#1a56db"/>
-            <path d="M12 48L24 20L32 36L40 24L52 48H12Z" fill="white" fill-opacity="0.95" stroke="white"
-                  stroke-width="1" stroke-linejoin="round"/>
-            <circle cx="44" cy="20" r="5" fill="white" fill-opacity="0.8"/>
-          </svg>
+          <img src="/logo.png" alt="AIHOM Logo" style="width: 40px; height: auto;" />
           <span class="aihom-form-title">AIHOM 系统登录</span>
         </div>
 
@@ -94,7 +84,10 @@
           <label class="aihom-checkbox">
             <input type="checkbox"> 记住我
           </label>
-          <a href="#" class="aihom-forgot">忘记密码？</a>
+          <div class="aihom-links">
+            <a href="#" class="aihom-forgot">忘记密码？</a>
+            <a href="#" class="aihom-register" @click.prevent="showRegisterDrawer = true">注册账号</a>
+          </div>
         </div>
 
         <!-- 登录按钮 -->
@@ -110,6 +103,118 @@
         <p class="aihom-footer">© 2025 AIHOM 智能审批系统 · 保留所有权利</p>
       </div>
     </div>
+
+    <!-- 注册抽屉 -->
+    <a-drawer
+        v-model:open="showRegisterDrawer"
+        title="注册新账号"
+        placement="right"
+        :width="420"
+        :closable="true"
+        :maskClosable="true"
+    >
+      <div class="register-form">
+        <a-form
+            :model="registerForm"
+            :rules="registerRules"
+            ref="registerFormRef"
+            layout="vertical"
+        >
+          <a-form-item label="用户名" name="username">
+            <a-input
+                v-model:value="registerForm.username"
+                placeholder="请输入用户名（必填）"
+                size="large"
+            >
+              <template #prefix>
+                <UserOutlined style="color: rgba(0,0,0,.25)"/>
+              </template>
+            </a-input>
+          </a-form-item>
+
+          <a-form-item label="真实姓名" name="realname">
+            <a-input
+                v-model:value="registerForm.realname"
+                placeholder="请输入真实姓名（可选）"
+                size="large"
+            >
+              <template #prefix>
+                <IdcardOutlined style="color: rgba(0,0,0,.25)"/>
+              </template>
+            </a-input>
+          </a-form-item>
+
+          <a-form-item label="邮箱" name="email">
+            <a-input
+                v-model:value="registerForm.email"
+                placeholder="请输入邮箱地址（可选）"
+                size="large"
+            >
+              <template #prefix>
+                <MailOutlined style="color: rgba(0,0,0,.25)"/>
+              </template>
+            </a-input>
+          </a-form-item>
+
+          <a-form-item label="手机号" name="phone">
+            <a-input
+                v-model:value="registerForm.phone"
+                placeholder="请输入手机号码（可选）"
+                size="large"
+            >
+              <template #prefix>
+                <PhoneOutlined style="color: rgba(0,0,0,.25)"/>
+              </template>
+            </a-input>
+          </a-form-item>
+
+          <a-form-item label="密码" name="password">
+            <a-input-password
+                v-model:value="registerForm.password"
+                placeholder="请输入密码（6-20位）"
+                size="large"
+            >
+              <template #prefix>
+                <LockOutlined style="color: rgba(0,0,0,.25)"/>
+              </template>
+            </a-input-password>
+          </a-form-item>
+
+          <a-form-item label="确认密码" name="confirmPassword">
+            <a-input-password
+                v-model:value="registerForm.confirmPassword"
+                placeholder="请再次输入密码"
+                size="large"
+            >
+              <template #prefix>
+                <LockOutlined style="color: rgba(0,0,0,.25)"/>
+              </template>
+            </a-input-password>
+          </a-form-item>
+
+          <a-form-item>
+            <a-space direction="vertical" style="width: 100%" :size="12">
+              <a-button
+                  type="primary"
+                  size="large"
+                  block
+                  :loading="registerLoading"
+                  @click="handleRegister"
+              >
+                立即注册
+              </a-button>
+              <a-button
+                  size="large"
+                  block
+                  @click="showRegisterDrawer = false"
+              >
+                取消
+              </a-button>
+            </a-space>
+          </a-form-item>
+        </a-form>
+      </div>
+    </a-drawer>
   </div>
 </template>
 
@@ -117,7 +222,16 @@
 import {ref, reactive} from 'vue'
 import {useRouter} from 'vue-router'
 import {message} from 'ant-design-vue'
-import {http} from '@/utils/http' // 确保你的 axios 实例路径正确
+import {http} from '@/utils/http'
+import {registerUser, type RegisterForm} from '@/api/approval'
+import {
+  UserOutlined,
+  LockOutlined,
+  MailOutlined,
+  PhoneOutlined,
+  IdcardOutlined
+} from '@ant-design/icons-vue'
+import type {FormInstance, Rule} from 'ant-design-vue'
 
 const router = useRouter()
 const showPassword = ref(false)
@@ -128,6 +242,64 @@ const loginForm = reactive({
   password: ''
 })
 
+// 注册相关
+const showRegisterDrawer = ref(false)
+const registerLoading = ref(false)
+const registerFormRef = ref<FormInstance>()
+
+const registerForm = reactive<RegisterForm>({
+  username: '',
+  password: '',
+  confirmPassword: '',
+  realname: '',
+  email: '',
+  phone: ''
+})
+
+// 自定义验证规则
+const validatePassword = async (_rule: Rule, value: string) => {
+  if (value === '') {
+    return Promise.reject('请输入密码')
+  }
+  if (value.length < 6 || value.length > 20) {
+    return Promise.reject('密码长度为6-20位')
+  }
+  return Promise.resolve()
+}
+
+const validateConfirmPassword = async (_rule: Rule, value: string) => {
+  if (value === '') {
+    return Promise.reject('请再次输入密码')
+  }
+  if (value !== registerForm.password) {
+    return Promise.reject('两次输入的密码不一致')
+  }
+  return Promise.resolve()
+}
+
+// 注册表单验证规则
+const registerRules: Record<string, Rule[]> = {
+  username: [
+    {required: true, message: '请输入用户名', trigger: 'blur'},
+    {min: 2, max: 20, message: '用户名长度为2-20位', trigger: 'blur'}
+  ],
+  realname: [
+    {min: 2, max: 20, message: '姓名长度为2-20位', trigger: 'blur'}
+  ],
+  email: [
+    {type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur'}
+  ],
+  phone: [
+    {pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号码', trigger: 'blur'}
+  ],
+  password: [
+    {required: true, validator: validatePassword, trigger: 'blur'}
+  ],
+  confirmPassword: [
+    {required: true, validator: validateConfirmPassword, trigger: 'blur'}
+  ]
+}
+
 // 点击登录
 const handleLogin = async () => {
   if (!loginForm.username || !loginForm.password) {
@@ -137,21 +309,23 @@ const handleLogin = async () => {
 
   loading.value = true
   try {
-    // 1. 【修复点 1】改为你真实的 Java 后端接口路径
     const res: any = await http.post('/sys/login', loginForm)
 
     console.log("后端返回完整数据:", res)
 
-    // 2. 兼容判断 JeecgBoot 的返回结构
+    // 检查返回结果
+    if (res?.success === false) {
+      // 后端返回业务错误（如密码错误）
+      message.error(res?.message || '登录失败')
+      return
+    }
+
     const token = res?.token || res?.result?.token;
-    // 获取返回的用户信息
     const userInfo = res?.userInfo || res?.result?.userInfo;
 
     if (token) {
-      // 3. 存入 Token
       localStorage.setItem('systemToken', token)
 
-      // 4. 【修复点 2】存入 UserInfo，供 Layout.vue 右上角显示名字
       if (userInfo) {
         localStorage.setItem('userInfo', JSON.stringify(userInfo))
       }
@@ -159,17 +333,86 @@ const handleLogin = async () => {
       console.log("✅ 登录成功，Token 已保存")
       message.success('登录成功')
 
-      // 5. 跳转到 Dashboard
       router.push('/dashboard')
     } else {
       console.error("❌ 未找到 Token, res结构:", res)
-      message.error(res?.message || '登录失败，账号或密码错误')
+      message.error(res?.message || '登录失败，请稍后重试')
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('网络请求错误:', error)
-    message.error('接口请求404或网络异常，请检查后端是否启动')
+    // 只有真正的网络错误才显示这个提示
+    if (error?.code === 'ERR_NETWORK' || error?.message?.includes('Network Error')) {
+      message.error('网络连接失败，请检查后端是否启动')
+    } else if (error?.response?.status === 404) {
+      message.error('接口不存在，请检查后端配置')
+    } else {
+      message.error('请求失败，请稍后重试')
+    }
   } finally {
     loading.value = false
+  }
+}
+
+// 处理注册
+const handleRegister = async () => {
+  if (!registerFormRef.value) return
+
+  try {
+    await registerFormRef.value.validate()
+
+    registerLoading.value = true
+
+    // 移除 confirmPassword 字段，不传给后端
+    const {confirmPassword, ...submitData} = registerForm
+
+    const res: any = await registerUser(submitData)
+
+    // 检查返回结果
+    if (res?.success === false) {
+      // 后端返回业务错误（如用户名已存在）
+      message.error(res?.message || '注册失败')
+      return
+    }
+
+    if (res?.success || res?.code === 200 || res?.code === 0) {
+      message.success('注册成功！请登录')
+
+      // 自动填充用户名到登录表单
+      loginForm.username = registerForm.username
+      loginForm.password = ''
+
+      // 关闭抽屉并重置表单
+      showRegisterDrawer.value = false
+      registerFormRef.value.resetFields()
+
+      // 重置表单数据
+      Object.assign(registerForm, {
+        username: '',
+        password: '',
+        confirmPassword: '',
+        realname: '',
+        email: '',
+        phone: ''
+      })
+    } else {
+      message.error(res?.message || '注册失败，请稍后重试')
+    }
+  } catch (error: any) {
+    console.error('注册失败:', error)
+    if (error?.errorFields) {
+      // 表单验证失败，不显示错误提示
+      return
+    }
+    // 只有真正的网络错误才显示提示
+    if (error?.code === 'ERR_NETWORK' || error?.message?.includes('Network Error')) {
+      message.error('网络连接失败，请检查后端是否启动')
+    } else if (error?.response?.status === 404) {
+      message.error('接口不存在，请检查后端配置')
+    } else {
+      message.error('请求失败，请稍后重试')
+    }
+  } finally {
+    registerLoading.value = false
   }
 }
 </script>
@@ -410,7 +653,14 @@ const handleLogin = async () => {
   cursor: pointer;
 }
 
-.aihom-forgot {
+.aihom-links {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.aihom-forgot,
+.aihom-register {
   font-size: 13px;
   color: #1a56db;
   text-decoration: none;
@@ -418,9 +668,26 @@ const handleLogin = async () => {
   transition: color 0.2s;
 }
 
-.aihom-forgot:hover {
+.aihom-forgot:hover,
+.aihom-register:hover {
   color: #1e40af;
   text-decoration: underline;
+}
+
+.aihom-register {
+  position: relative;
+  padding-left: 12px;
+}
+
+.aihom-register::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1px;
+  height: 12px;
+  background: #cbd5e0;
 }
 
 .aihom-submit-btn {
@@ -510,5 +777,59 @@ const handleLogin = async () => {
     width: 100%;
     padding: 40px 24px;
   }
+}
+
+/* 注册抽屉样式 */
+.register-form {
+  padding-top: 8px;
+}
+
+.register-form :deep(.ant-form-item) {
+  margin-bottom: 20px;
+}
+
+.register-form :deep(.ant-form-item-label > label) {
+  font-weight: 500;
+  color: #1a202c;
+}
+
+.register-form :deep(.ant-input-affix-wrapper),
+.register-form :deep(.ant-input) {
+  border-radius: 8px;
+  border-color: #e2e8f0;
+}
+
+.register-form :deep(.ant-input-affix-wrapper:focus),
+.register-form :deep(.ant-input-affix-wrapper-focused),
+.register-form :deep(.ant-input:focus) {
+  border-color: #1a56db;
+  box-shadow: 0 0 0 2px rgba(26, 86, 219, 0.1);
+}
+
+.register-form :deep(.ant-btn-primary) {
+  background: linear-gradient(135deg, #1a56db 0%, #1e40af 100%);
+  border: none;
+  border-radius: 8px;
+  height: 44px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  box-shadow: 0 4px 12px rgba(26, 86, 219, 0.3);
+}
+
+.register-form :deep(.ant-btn-primary:hover) {
+  background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
+  box-shadow: 0 6px 16px rgba(26, 86, 219, 0.4);
+}
+
+.register-form :deep(.ant-btn-default) {
+  border-radius: 8px;
+  height: 44px;
+  border-color: #e2e8f0;
+  color: #4a5568;
+}
+
+.register-form :deep(.ant-btn-default:hover) {
+  border-color: #cbd5e0;
+  color: #1a202c;
 }
 </style>

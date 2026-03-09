@@ -6,11 +6,15 @@ import com.auth0.jwt.algorithms.Algorithm;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
+import org.aihom.modules.system.entity.ApprovalUser;
+import org.aihom.modules.system.service.IApprovalUserService;
 import org.jeecg.common.api.vo.Result;
+import org.jeecg.common.util.PasswordUtil;
+import org.jeecg.common.util.oConvertUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
-import java.util.UUID;
 
 /**
  * 用户登录与注册控制器 (采用 JWT 单点登录，已剥离 Keycloak)
@@ -24,6 +28,9 @@ public class LoginController {
 
     // ⚠️ 极其重要：这是你和 Superset 约定的共同秘钥，两边必须一模一样！
     private static final String SSO_SECRET = "aihom_superset_secret_key_2026";
+
+    @Autowired
+    private IApprovalUserService userService;
 
     /**
      * 封装一个生成 JWT 的私有方法，供登录和注册复用
@@ -46,15 +53,45 @@ public class LoginController {
 
         log.info("用户登录: username={}", username);
 
-        // TODO: 替换为你实际的查库验证逻辑
-        if ("admin".equals(username) && "admin".equals(password)) {
-            String realname = "管理员"; // 实际应该从数据库查出来
+        // 从数据库查找用户
+        ApprovalUser user = userService.getUserByUsername(username);
+        
+        if (user == null) {
+            result.setSuccess(false);
+            result.setMessage("用户不存在");
+            log.warn("用户登录失败，用户不存在: username={}", username);
+            return result;
+        }
+        
+        // 验证密码（使用 JeecgBoot 的加密方式）
+        String encryptedPassword = PasswordUtil.encrypt(username, password, user.getSalt());
+        
+        if (encryptedPassword.equals(user.getPassword())) {
+            // 检查用户状态
+            if (user.getStatus() == 0) {
+                result.setSuccess(false);
+                result.setMessage("账号已被冻结，请联系管理员");
+                log.warn("用户登录失败，账号已冻结: username={}", username);
+                return result;
+            }
+            
+            // 检查删除标志
+            if (user.getDelFlag() != null && user.getDelFlag() == 1) {
+                result.setSuccess(false);
+                result.setMessage("账号已被删除");
+                log.warn("用户登录失败，账号已删除: username={}", username);
+                return result;
+            }
+            
+            String realname = user.getRealname();
 
             JSONObject userInfo = new JSONObject();
-            userInfo.put("id", "1");
+            userInfo.put("id", user.getId());
             userInfo.put("username", username);
             userInfo.put("realname", realname);
-            userInfo.put("avatar", "");
+            userInfo.put("email", user.getEmail());
+            userInfo.put("phone", user.getPhone());
+            userInfo.put("avatar", user.getAvatar() == null ? "" : user.getAvatar());
 
             JSONObject data = new JSONObject();
             // 核心：签发 JWT Token
@@ -69,7 +106,7 @@ public class LoginController {
         } else {
             result.setSuccess(false);
             result.setMessage("用户名或密码错误");
-            log.warn("用户登录失败: username={}", username);
+            log.warn("用户登录失败，密码错误: username={}", username);
         }
 
         return result;
@@ -82,27 +119,85 @@ public class LoginController {
         String username = registerModel.getString("username");
         String password = registerModel.getString("password");
         String realname = registerModel.getString("realname");
+        String email = registerModel.getString("email");
+        String phone = registerModel.getString("phone");
 
-        // TODO: 1. 这里执行你主系统数据库的 INSERT 插入用户操作
+        log.info("用户注册: username={}", username);
 
-        // 2. 注册成功后，直接让他处于登录状态（颁发 Token）
+        // 1. 验证用户名不为空
+        if (username == null || username.trim().isEmpty()) {
+            result.setSuccess(false);
+            result.setMessage("用户名不能为空");
+            log.warn("注册失败，用户名为空");
+            return result;
+        }
+
+        // 2. 验证用户名是否已存在
+        ApprovalUser existUser = userService.getUserByUsername(username);
+        if (existUser != null) {
+            result.setSuccess(false);
+            result.setMessage("用户名已存在");
+            log.warn("注册失败，用户名已存在: username={}", username);
+            return result;
+        }
+
+        // 3. 验证密码不为空
+        if (password == null || password.trim().isEmpty()) {
+            result.setSuccess(false);
+            result.setMessage("密码不能为空");
+            log.warn("注册失败，密码为空");
+            return result;
+        }
+
+        // 4. 创建新用户
+        ApprovalUser newUser = new ApprovalUser();
+        
+        // 生成盐值
+        String salt = oConvertUtils.randomGen(8);
+        // 加密密码
+        String encryptedPassword = PasswordUtil.encrypt(username, password, salt);
+        
+        newUser.setUsername(username.trim());
+        newUser.setPassword(encryptedPassword);
+        newUser.setSalt(salt);
+        newUser.setRealname((realname == null || realname.trim().isEmpty()) ? username : realname.trim());
+        newUser.setEmail(email == null ? "" : email.trim());
+        newUser.setPhone(phone == null ? "" : phone.trim());
+        newUser.setStatus(1); // 正常状态
+        newUser.setDelFlag(0); // 未删除
+
+        // 5. 保存到数据库
+        try {
+            userService.registerUser(newUser);
+        } catch (Exception e) {
+            log.error("注册失败: {}", e.getMessage(), e);
+            result.setSuccess(false);
+            result.setMessage("注册失败，请稍后重试");
+            return result;
+        }
+
+        // 6. 注册成功后，直接让他处于登录状态（颁发 Token）
         JSONObject userInfo = new JSONObject();
-        userInfo.put("id", UUID.randomUUID().toString());
+        userInfo.put("id", newUser.getId());
         userInfo.put("username", username);
-        userInfo.put("realname", realname == null ? username : realname);
+        userInfo.put("realname", newUser.getRealname());
+        userInfo.put("email", newUser.getEmail());
+        userInfo.put("phone", newUser.getPhone());
+        userInfo.put("avatar", "");
 
         JSONObject data = new JSONObject();
         // 关键：注册完也发一个 JWT，等他带着这个 Token 访问看板时，Superset 会自动同步创建账号！
-        data.put("token", generateSsoToken(username, userInfo.getString("realname")));
+        data.put("token", generateSsoToken(username, newUser.getRealname()));
         data.put("userInfo", userInfo);
 
         result.setResult(data);
         result.setSuccess(true);
-        result.setMessage("注册并登录成功");
+        result.setMessage("注册成功");
+        
+        log.info("用户注册成功: username={}, realname={}", username, newUser.getRealname());
+        
         return result;
     }
-
-    // ... logout 和 getUserInfo 保持你原来的不变
 
     @Operation(summary = "退出登录")
     @PostMapping("/logout")
@@ -115,17 +210,54 @@ public class LoginController {
     
     @Operation(summary = "获取用户信息")
     @GetMapping("/user/getUserInfo")
-    public Result<JSONObject> getUserInfo() {
+    public Result<JSONObject> getUserInfo(@RequestHeader(value = "X-Access-Token", required = false) String token) {
         Result<JSONObject> result = new Result<>();
         
-        JSONObject userInfo = new JSONObject();
-        userInfo.put("id", "1");
-        userInfo.put("username", "admin");
-        userInfo.put("realname", "管理员");
-        userInfo.put("avatar", "");
-        
-        result.setResult(userInfo);
-        result.setSuccess(true);
+        try {
+            // 1. 验证 Token 是否存在
+            if (token == null || token.trim().isEmpty()) {
+                result.setSuccess(false);
+                result.setMessage("未登录或登录已过期");
+                result.setCode(401);
+                return result;
+            }
+            
+            // 2. 解析 Token 获取用户名
+            Algorithm algorithm = Algorithm.HMAC256(SSO_SECRET);
+            com.auth0.jwt.interfaces.DecodedJWT jwt = JWT.require(algorithm).build().verify(token);
+            String username = jwt.getClaim("username").asString();
+            
+            // 3. 从数据库中获取用户信息
+            ApprovalUser user = userService.getUserByUsername(username);
+            
+            if (user == null) {
+                result.setSuccess(false);
+                result.setMessage("用户不存在");
+                result.setCode(404);
+                return result;
+            }
+            
+            // 4. 返回用户信息（不包含密码）
+            JSONObject userInfo = new JSONObject();
+            userInfo.put("id", user.getId());
+            userInfo.put("username", user.getUsername());
+            userInfo.put("realname", user.getRealname());
+            userInfo.put("email", user.getEmail());
+            userInfo.put("phone", user.getPhone());
+            userInfo.put("avatar", user.getAvatar() == null ? "" : user.getAvatar());
+            
+            result.setResult(userInfo);
+            result.setSuccess(true);
+            result.setMessage("获取用户信息成功");
+            
+            log.info("获取用户信息成功: username={}", username);
+            
+        } catch (Exception e) {
+            log.error("获取用户信息失败: {}", e.getMessage());
+            result.setSuccess(false);
+            result.setMessage("Token 无效或已过期");
+            result.setCode(401);
+        }
         
         return result;
     }

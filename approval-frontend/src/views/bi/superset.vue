@@ -174,8 +174,15 @@ const loadSuperset = async () => {
       supersetDomain: normalizeSupersetDomain(supersetBaseUrl.value),
       mountPoint: mountPoint.value,
       fetchGuestToken: async () => {
-        const token = await http.get('/superset/system-token', { params: { embeddedUuid } })
-        return token as any
+        const res: any = await http.get('/superset/system-token', { params: { embeddedUuid } })
+        // 从后端返回的 Result 结构中提取 token
+        const token = res?.result || res
+        
+        if (!token || typeof token !== 'string') {
+          throw new Error('获取 Token 失败：Token 无效')
+        }
+        
+        return token
       },
       dashboardUiConfig: {
         hideTitle: true,

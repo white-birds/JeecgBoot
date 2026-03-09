@@ -40,38 +40,23 @@ class HttpRequest {
         
         console.log('🔥 API Response:', response.config.url, data)
         
-        // 根据后端返回的数据结构调整
-        if (data.success === false) {
-          message.error(data.message || '请求失败')
-          return Promise.reject(data)
-        }
-        
-        // JeecgBoot 返回结构：{ success: true, result: {...}, message: '' }
-        return data.result !== undefined ? data.result : data
+        // 直接返回完整的响应数据，让业务代码自己处理
+        // 不在这里显示错误提示，避免重复提示
+        return data
       },
       (error) => {
+        // 只处理真正的网络错误和HTTP错误
         if (error.response) {
           const { status } = error.response
           
-          switch (status) {
-            case 401:
-              message.error('未授权，请重新登录')
-              // 可以跳转到登录页
-              break
-            case 403:
-              message.error('拒绝访问')
-              break
-            case 404:
-              message.error('请求的资源不存在')
-              break
-            case 500:
-              message.error('服务器错误')
-              break
-            default:
-              message.error('请求失败')
-          }
+          // 不在这里显示错误提示，让业务代码处理
+          console.error('HTTP Error:', status, error.response.data)
+        } else if (error.request) {
+          // 请求已发出，但没有收到响应
+          console.error('Network Error:', error.message)
         } else {
-          message.error('网络错误，请检查网络连接')
+          // 其他错误
+          console.error('Error:', error.message)
         }
         
         return Promise.reject(error)
